@@ -1,0 +1,170 @@
+[
+  {
+    "id": "allow-01",
+    "note": "普通相对路径",
+    "root": "/srv/tenants/acme",
+    "request": "reports/2026/q3.csv"
+  },
+  {
+    "id": "allow-02",
+    "note": "反斜杠也当分隔符",
+    "root": "/srv/tenants/acme",
+    "request": "reports\\2026\\q3.csv"
+  },
+  {
+    "id": "allow-03",
+    "note": "`.` 与重复分隔符折叠",
+    "root": "/srv/tenants/acme",
+    "request": "a//./b///c.txt"
+  },
+  {
+    "id": "allow-04",
+    "note": "末尾分隔符折叠",
+    "root": "/srv/tenants/acme",
+    "request": "logs/2026/"
+  },
+  {
+    "id": "allow-05",
+    "note": "`..` 回到根但不越界",
+    "root": "/srv/tenants/acme",
+    "request": "a/b/../../c.txt"
+  },
+  {
+    "id": "allow-06",
+    "note": "折叠后回到根：结果就是根目录",
+    "root": "/srv/tenants/acme",
+    "request": "a/.."
+  },
+  {
+    "id": "allow-07",
+    "note": "空请求：结果就是根目录",
+    "root": "/srv/tenants/acme",
+    "request": ""
+  },
+  {
+    "id": "allow-08",
+    "note": "看着像通配符的方括号是普通字符",
+    "root": "/srv/tenants/acme",
+    "request": "exports/[2026]/#1~tmp%.csv"
+  },
+  {
+    "id": "allow-09",
+    "note": "大小写原样保留",
+    "root": "/srv/tenants/acme",
+    "request": "Reports/Q3/Final.CSV"
+  },
+  {
+    "id": "allow-10",
+    "note": "深层嵌套",
+    "root": "/srv/tenants/acme",
+    "request": "a/b/c/d/e/f/g/h.txt"
+  },
+  {
+    "id": "allow-11",
+    "note": "段名里带点但不是保留名",
+    "root": "/srv/tenants/acme",
+    "request": "notes/con-notes.txt"
+  },
+  {
+    "id": "allow-12",
+    "note": "根目录本身带末尾分隔符",
+    "root": "/srv/tenants/acme/",
+    "request": "x.txt"
+  },
+  {
+    "id": "deny-01",
+    "note": "绝对路径（以斜杠开头）",
+    "root": "/srv/tenants/acme",
+    "request": "/etc/passwd"
+  },
+  {
+    "id": "deny-02",
+    "note": "盘符前缀",
+    "root": "/srv/tenants/acme",
+    "request": "C:\\Windows\\win.ini"
+  },
+  {
+    "id": "deny-03",
+    "note": "UNC 前缀",
+    "root": "/srv/tenants/acme",
+    "request": "\\\\server\\share\\file"
+  },
+  {
+    "id": "deny-04",
+    "note": "越界：一开始就 `..`",
+    "root": "/srv/tenants/acme",
+    "request": "../secret.txt"
+  },
+  {
+    "id": "deny-05",
+    "note": "越界：深入地回退到根之上",
+    "root": "/srv/tenants/acme",
+    "request": "a/b/../../../c.txt"
+  },
+  {
+    "id": "deny-06",
+    "note": "保留设备名 CON",
+    "root": "/srv/tenants/acme",
+    "request": "logs/con"
+  },
+  {
+    "id": "deny-07",
+    "note": "保留设备名 LPT1 带扩展名",
+    "root": "/srv/tenants/acme",
+    "request": "logs/LPT1.txt"
+  },
+  {
+    "id": "deny-08",
+    "note": "保留设备名 aux（大小写不敏感）",
+    "root": "/srv/tenants/acme",
+    "request": "Aux.cfg"
+  },
+  {
+    "id": "deny-09",
+    "note": "非法字符 *",
+    "root": "/srv/tenants/acme",
+    "request": "logs/*.log"
+  },
+  {
+    "id": "deny-10",
+    "note": "非法字符 ?",
+    "root": "/srv/tenants/acme",
+    "request": "logs/a?b.txt"
+  },
+  {
+    "id": "deny-11",
+    "note": "非法字符 :",
+    "root": "/srv/tenants/acme",
+    "request": "logs/a:b.txt"
+  },
+  {
+    "id": "deny-12",
+    "note": "控制字符",
+    "root": "/srv/tenants/acme",
+    "request": "logs/a\u0001b.txt"
+  },
+  {
+    "id": "deny-13",
+    "note": "整体超长",
+    "root": "/srv/tenants/acme",
+    "request": "seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/seg/file.txt"
+  },
+  {
+    "id": "deny-14",
+    "note": "单段超长",
+    "root": "/srv/tenants/acme",
+    "request": "logs/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.txt"
+  },
+  {
+    "id": "deny-15",
+    "note": "只有分隔符：以分隔符开头，按绝对路径拒绝",
+    "root": "/srv/tenants/acme",
+    "request": "////"
+  },
+  {
+    "id": "deny-16",
+    "note": "只有反斜杠分隔符",
+    "root": "/srv/tenants/acme",
+    "request": "\\\\\\"
+  }
+]
