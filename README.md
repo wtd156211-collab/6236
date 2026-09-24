@@ -70,4 +70,46 @@ samples/expected.txt   对应的期望结果（12 条允许 + 16 条拒绝）
 
 ## 待补的文档
 
-实现完成后写清楚：解析是怎么做到单遍的、根目录的解析结果缓存了什么、越界的段序号是怎么数出来的。
+~~实现完成后写清楚：解析是怎么做到单遍的、根目录的解析结果缓存了什么、越界的段序号是怎么数出来的。~~
+
+已在下面「实现说明」中补齐。
+
+## 用法
+
+```python
+from pathguard import normalize, format_line
+
+result = normalize("/srv/tenants/acme", "reports/2026/q3.csv")
+if result.ok:
+    serve(result.path)          # /srv/tenants/acme/reports/2026/q3.csv
+else:
+    reject(result.code, result.segment_index, result.detail)
+```
+
+- 库：`pathguard.py`，只依赖标准库，入口是 `normalize(root, request, max_segment_len=255, max_path_len=260)`；
+- 样例运行器：`python3 run_samples.py`，逐条跑 `samples/cases.json` 并按输出格式打印，输出与 `samples/expected.txt` 逐字节一致；
+- 测试：`python3 -m unittest discover -s tests -v`，覆盖样例对照、幂等、各条规则与性能冒烟。
+
+## 实现说明
+
+### 单遍解析
+
+`normalize` 先做一次 O(1) 的前缀判断（首字符是分隔符、或「字母+冒号」的盘符），然后进入唯一的主循环：指针从头到尾扫一遍请求，每遇到分隔符（或串尾）就切出一段，**当场**完成这段的全部处置——空段与 `.` 丢弃、`..` 从栈上弹一层（栈空即越界）、普通段依次做长度、非法字符、保留名校验后压栈。循环结束后只做一次 `"/".join(stack)` 拼到根前缀上，再做整路径长度与根包含两次整体检查。全程没有第二遍扫描，循环里不做 `split`/`join`/字符串相加。
+
+### 根目录缓存
+
+根目录是服务端配置、一次请求周期内不变，所以按根目录字符串缓存解析结果（`_root_cache`），缓存四项：
+
+- `joined`：折叠后的根目录（去掉空段、`.` 与末尾分隔符），如 `/srv/tenants/acme`；
+- `prefix`：拼子路径用的前缀，与 `joined` 相同，仅当根是 `/` 时为空串（避免拼出 `//x`）；
+- `lower` / `lower_prefix`：`joined` 的 ASCII 小写及其加分隔符形式，供硬约束做按段边界、不区分大小写的前缀比较。
+
+缓存只是避免重复解析，键就是根目录原文，命中与否结果完全一致。
+
+### 段序号怎么数
+
+主循环每切出一段就把计数器加一——**包括被丢弃的空段**，所以序号就是「原始请求按分隔符切分后的位置（从 1 开始）」，例如 `a//../../x` 里越界的 `..` 是第 4 段。整体性问题（绝对路径前缀、整条超长、根包含失败）不对应任何一段，序号写 `0`。
+
+### 幂等与确定性
+
+输出只由折叠后的段栈拼成：分隔符统一为 `/`，大小写保留请求原文，不引入任何请求之外的信息。因此把结果去掉根前缀再喂回来，会逐段压出同一个栈、拼出同一个字符串。`tests/test_pathguard.py` 里 `IdempotencyTest` 与 `SamplesTest.test_samples_are_idempotent` 对全部允许样例和一组手工构造的输入验证了这条，另有逐字节确定性（同输入跑两遍结果相同）的用例。
